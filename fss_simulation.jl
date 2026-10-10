@@ -152,6 +152,22 @@ end
 Ls = [16, 32, 48, 64]
 Ts = range(2.10, 2.44, step=0.005)
 
-results = get_magnetization_sim(Ls , Ts, 8000, 30, 2.269185)
+sim_results = get_magnetization_sim(Ls , Ts, 8000, 50, 2.269185)
 
-CSV.write("simulation_results/binder_sim_data.csv", results)
+CSV.write("simulation_results/binder_sim_data.csv", sim_results)
+
+function binder_cumulant(m4, m2)
+    return 1 - m4/(3*m2^2)
+end
+
+result = combine(
+    groupby(sim_results, [:L, :T]),
+    :m2 => mean => :m2_mean,
+    :m4 => mean => :m4_mean
+)
+
+result.U = binder_cumulant.(result.m4_mean, result.m2_mean)
+
+sort!(result, [:L, :T])
+
+CSV.write("simulation_results/binder_data.csv", result)
