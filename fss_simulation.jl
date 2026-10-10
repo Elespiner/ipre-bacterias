@@ -30,6 +30,12 @@ function get_energy(lattice, J=1)
     return energy / 2.0
 end
 
+
+"""
+    Genera una simulación del algoritmo de metropolis para una lattice spin_arr 
+    con un temperature bath fijo T_temp y haciendo iter iteraciones (Monte-Carlo Sweeps).
+    Retorna un arreglo con la magnetización en cada iteración.
+"""
 function metropolis(spin_arr::Matrix{T}, iter::Int, T_temp::Real, J=1.0, K=1.0) where {T<:Real}
     spins = copy(spin_arr)
     N, M = size(spins)
