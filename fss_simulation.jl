@@ -149,9 +149,9 @@ function get_magnetization_sim( Ls::AbstractVector{<:Int},
 end
 
 
-Ls = [16 24 32]
-Ts = range(2.15, 2.40, step=0.025)
+Ls = [16, 32, 48, 64]
+Ts = range(2.10, 2.44, step=0.005)
 
-results = get_magnetization_sim(Ls , Ts, 2000, 15, 2.269185)
+results = get_magnetization_sim(Ls , Ts, 8000, 30, 2.269185)
 
 CSV.write("simulation_results/binder_sim_data.csv", results)
