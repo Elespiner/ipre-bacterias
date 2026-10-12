@@ -10,6 +10,7 @@ Este repositorio consiste en algunas simulaciones del Modelo de Ising en dos dim
 
 ### Finite Scaling Analysis y Exponentes Críticos
 
-- `fss_simulation.jl`. Este script cuenta con una simulación del modelo de Ising implementada con paralelismo que genera los datos necesarios para hacer una análisis del cumulante de Binder. Estos datos son guardados en `simulation_results/binder_data.csv` y `simulation_results/binder_sim_data.csv`.
-- `binder_analysis.jl`. Este notebook pretender analizar los datos obtenidos de `fss_simulation.jl`, y explicar sus resultados.
-
+- `fss_simulation_metropolis.jl`. Este script cuenta con una simulación del modelo de Ising a través del algoritmo de **Metropolis** implementada con paralelismo que genera los datos necesarios para hacer una análisis con cumulante de Binder de los exponentes críticos. Estos datos son guardados en `simulation_results/_metropolis_binder_data.csv` y `simulation_results/metropolis_sim_data.csv`.
+- `fss_simulation_wolff.jl`. Este script cuenta con una simulación del modelo de Ising a través del algoritmo de **Wolff** implementada con paralelismo que genera los datos necesarios para hacer una análisis con cumulante de Binder de los exponentes críticos. Estos datos son guardados en `simulation_results/wolff_binder_data.csv` y `simulation_results/wolff_sim_data.csv`.
+- `binder_analysis_metropolis.jl`. Este notebook pretender analizar los datos obtenidos de `fss_simulation_metropolis.jl`, obtener los exponentes críticos y explicar sus resultados.
+- `binder_analysis_wolff.jl`. Este notebook pretender analizar los datos obtenidos de `fss_simulation_wolff.jl`, obtener los exponentes críticos y explicar sus resultados.

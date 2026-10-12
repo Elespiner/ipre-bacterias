@@ -104,7 +104,8 @@ function get_magnetization_sim( Ls::AbstractVector{<:Int},
                                 Ts::AbstractVector{<:Real},
                                 iter::Int,
                                 sims::Int,
-                                crit_temp::Real)
+                                crit_temp::Real,
+                                burn_in::Int=2000)
 
     n_rows = length(Ls) * length(Ts) * sims
 

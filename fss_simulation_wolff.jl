@@ -1,4 +1,3 @@
-
 using Plots
 using Statistics
 using Base.Threads
@@ -6,33 +5,29 @@ using DataFrames
 using CSV
 using Random
 
-# ==============================================
-# 1. ACTUALIZACIÓN DE WOLFF
-# ==============================================
-
 """
 Construye e invierte un cluster de Wolff.
 
 Devuelve:
 - cluster_size: cantidad de espines invertidos
-- seed_spin: signo original del cluster
+- spin_i: signo original del cluster
 
-marks, stack y stamp permiten reutilizar memoria.
+marks, stack y cluster_num permiten reutilizar memoria.
 """
-function wolff_update!(spins, p, marks, stamp, stack)
+function wolff_update!(spins, p, marks, cluster_num, stack)
 
     N, M = size(spins)
 
     x = rand(1:N)
     y = rand(1:M)
 
-    seed_spin = spins[x, y]
+    spin_i = spins[x, y]
 
     empty!(stack)
     push!(stack, (x, y))
 
-    marks[x, y] = stamp
-    spins[x, y] = -seed_spin
+    marks[x, y] = cluster_num
+    spins[x, y] = -spin_i
 
     cluster_size = 1
 
@@ -47,14 +42,14 @@ function wolff_update!(spins, p, marks, stamp, stack)
         )
 
         for (nx, ny) in neighbors
-            if marks[nx, ny] != stamp &&
-               spins[nx, ny] == seed_spin &&
+            if marks[nx, ny] != cluster_num &&
+               spins[nx, ny] == spin_i &&
                rand() < p
 
-                marks[nx, ny] = stamp
+                marks[nx, ny] = cluster_num
 
-                # Invertimos el espín al incorporarlo
-                spins[nx, ny] = -seed_spin
+                # Invertimos el spin al tiro
+                spins[nx, ny] = -spin_i
 
                 push!(stack, (nx, ny))
                 cluster_size += 1
@@ -62,54 +57,41 @@ function wolff_update!(spins, p, marks, stamp, stack)
         end
     end
 
-    return cluster_size, seed_spin
+    return cluster_size, spin_i
 end
 
-
-# ==============================================
-# 2. SIMULACIÓN DE WOLFF
-# ==============================================
-
 """
-Ejecuta 'iter' barridos equivalentes de Wolff.
+Ejecuta 'iter' iteraciones del algoritmo de Wolff
+que no es exactamente igual a un MCS
 
-Un barrido equivalente corresponde aproximadamente
-a L² espines invertidos, acumulando clusters.
-
-Devuelve un vector de magnetización normalizada,
-con una medición por barrido equivalente.
+Retorna la magnetizacion normalizada en cada iter.
 """
-function wolff(spin_arr, iter::Int, T::Real)
+function wolff(spin_arr, iter::Int, T::Real, J=1.0, K=1.0)
     spins = copy(spin_arr)
     N, M = size(spins)
 
-    p = -expm1(-2 / T)
+    p = -expm1((-2 * J)/(K * T))
 
     mag_time_series = zeros(Float64, iter)
     current_net_spin = sum(spins)
 
     marks = zeros(Int, N, M)
     stack = Tuple{Int,Int}[]
-    stamp = 0
+    cluster_num = 0
 
     for t in 1:iter
-        stamp += 1
+        cluster_num += 1
 
-        cluster_size, seed_spin = wolff_update!(
-            spins, p, marks, stamp, stack
+        cluster_size, spin_i = wolff_update!(
+            spins, p, marks, cluster_num, stack
         )
 
-        current_net_spin -= 2 * seed_spin * cluster_size
+        current_net_spin -= 2 * spin_i * cluster_size
         mag_time_series[t] = current_net_spin / (N*M)
     end
 
     return mag_time_series
 end
-
-
-# ==============================================
-# 3. SIMULACIONES PARA FSS
-# ==============================================
 
 function get_magnetization_sim(
     Ls::AbstractVector{<:Int},
@@ -154,10 +136,8 @@ function get_magnetization_sim(
                     current_lattice, iter, T
                 )
 
-                # Descartar termalización
                 m = @view mag_time_series[burn_in+1:end]
 
-                # Fila única para cada combinación
                 row = ((j - 1) * length(Ts) + (i - 1)) * sims + s
 
                 results.L[row] = L
@@ -176,10 +156,6 @@ function get_magnetization_sim(
 end
 
 
-# ==============================================
-# 4. EJECUTAR SIMULACIONES
-# ==============================================
-
 Ls = [16, 24, 32, 48, 64, 96, 128]
 Ts = range(2.20, 2.34, step=0.005)
 
@@ -194,22 +170,9 @@ Tc = 2 / log(1 + sqrt(2))
     burn_in=burn_in
 )
 
-
-# ==============================================
-# 5. GUARDAR DATOS INDIVIDUALES
-# ==============================================
-
 mkpath("simulation_results")
 
-CSV.write(
-    "simulation_results/wolff_sim_data.csv",
-    sim_results
-)
-
-
-# ==============================================
-# 6. CALCULAR OBSERVABLES PROMEDIADOS
-# ==============================================
+CSV.write("simulation_results/wolff_sim_data.csv", sim_results)
 
 function binder_cumulant(m4, m2)
     return 1 - m4 / (3 * m2^2)
@@ -228,20 +191,12 @@ result.U = binder_cumulant.(
     result.m2_mean
 )
 
-# Susceptibilidad magnética
 result.chi = result.L.^2 ./ result.T .*
     (result.m2_mean .- result.m_mean.^2)
 
-# Susceptibilidad modificada
 result.chi_abs = result.L.^2 ./ result.T .*
     (result.m2_mean .- result.mAbs_mean.^2)
 
 sort!(result, [:L, :T])
 
-CSV.write(
-    "simulation_results/wolff_binder_data.csv",
-    result
-)
-
-println("Simulación Wolff terminada.")
-println("Filas guardadas: ", nrow(sim_results))
+CSV.write("simulation_results/wolff_binder_data.csv", result)
