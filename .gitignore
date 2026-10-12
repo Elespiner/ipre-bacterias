@@ -1,2 +1,5 @@
 test.jl
 test.ipynb
+stop_condition.ipynb
+error_analysis.ipynb
+fss_data_processing.jl

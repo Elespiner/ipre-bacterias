@@ -112,6 +112,8 @@ function get_magnetization_sim( Ls::AbstractVector{<:Int},
         L = zeros(Int, n_rows),
         T = zeros(Float64, n_rows),
         sim = zeros(Int, n_rows),
+        m = zeros(Float64, n_rows),
+        mAbs = zeros(Float64, n_rows),
         m2 = zeros(Float64, n_rows),
         m4 = zeros(Float64, n_rows)
     )
@@ -133,8 +135,8 @@ function get_magnetization_sim( Ls::AbstractVector{<:Int},
 
                 mag_time_series = metropolis(current_lattice, iter, T)
 
-                # Descartamos las primeras 1000 iteraciones
-                @views m = mag_time_series[(1000 + 1):end]  
+                # Descartamos las primeras 3000 iteraciones
+                @views m = mag_time_series[(3000 + 1):end]  
 
                 #idx = LinearIndices((sims, length(Ts), length(Ls)))
                 #row = idx[s, i, j]
@@ -144,6 +146,8 @@ function get_magnetization_sim( Ls::AbstractVector{<:Int},
                 results.L[row] = L
                 results.T[row] = T
                 results.sim[row] = s
+                results.m[row] = mean(m)
+                results.mAbs[row] = mean(abs, m)
                 results.m2[row] = mean(x -> x^2, m)
                 results.m4[row] = mean(x -> x^4, m)
 
@@ -155,12 +159,12 @@ function get_magnetization_sim( Ls::AbstractVector{<:Int},
 end
 
 
-Ls = [16, 32, 48, 64]
-Ts = range(2.10, 2.44, step=0.005)
+Ls = [16, 24, 32, 48, 64, 96, 128]
+Ts = range(2.20, 2.34, step=0.005)
 
-sim_results = get_magnetization_sim(Ls , Ts, 8000, 50, 2.269185)
+@time sim_results = get_magnetization_sim(Ls , Ts, 15_000, 80, 2.269185)
 
-CSV.write("simulation_results/binder_sim_data.csv", sim_results)
+CSV.write("simulation_results/metropolis_sim_data.csv", sim_results)
 
 function binder_cumulant(m4, m2)
     return 1 - m4/(3*m2^2)
@@ -169,11 +173,13 @@ end
 result = combine(
     groupby(sim_results, [:L, :T]),
     :m2 => mean => :m2_mean,
-    :m4 => mean => :m4_mean
+    :m4 => mean => :m4_mean,
+    :m => mean => :m_mean,
+    :mAbs => mean => :mAbs_mean
 )
 
 result.U = binder_cumulant.(result.m4_mean, result.m2_mean)
 
 sort!(result, [:L, :T])
 
-CSV.write("simulation_results/binder_data.csv", result)
+CSV.write("simulation_results/metropolis_binder_data.csv", result)
