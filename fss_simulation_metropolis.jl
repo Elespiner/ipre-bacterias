@@ -181,6 +181,13 @@ result = combine(
 
 result.U = binder_cumulant.(result.m4_mean, result.m2_mean)
 
+result.chi = result.L.^2 ./ result.T .*
+    (result.m2_mean .- result.m_mean.^2)
+
+result.chi_abs = result.L.^2 ./ result.T .*
+    (result.m2_mean .- result.mAbs_mean.^2)
+
+
 sort!(result, [:L, :T])
 
 CSV.write("simulation_results/metropolis_binder_data.csv", result)
