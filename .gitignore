@@ -3,6 +3,3 @@ test.ipynb
 stop_condition.ipynb
 error_analysis.ipynb
 fss_data_processing.jl
-simulation_results/ahl_run_moments.csv
-simulation_results/c6e_run_moments.csv
-binder_analysis_ed.ipynb
